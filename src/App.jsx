@@ -26,6 +26,8 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [trendingMovies, setTrendingMovies] = useState([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
+  const [trendingError, setTrendingError] = useState('');
 
   // Debounce the search term to prevent making too many API requests
   // by waiting for the user to stop typing for 500ms
@@ -68,12 +70,21 @@ const App = () => {
   }
 
   const loadTrendingMovies = async () => {
+    setTrendingLoading(true);
+    setTrendingError('');
+    
     try {
       const movies = await getTrendingMovies();
-
-      setTrendingMovies(movies);
+      setTrendingMovies(movies || []);
+      
+      if (!movies || movies.length === 0) {
+        setTrendingError('No trending movies found');
+      }
     } catch (error) {
       console.error(`Error fetching trending movies: ${error}`);
+      setTrendingError('Failed to load trending movies');
+    } finally {
+      setTrendingLoading(false);
     }
   }
 
@@ -97,10 +108,14 @@ const App = () => {
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
 
-        {trendingMovies.length > 0 && (
-          <section className="trending">
-            <h2>Trending Movies</h2>
-
+        <section className="trending">
+          <h2>Trending Movies</h2>
+          
+          {trendingLoading ? (
+            <Spinner />
+          ) : trendingError ? (
+            <p className="text-red-500">{trendingError}</p>
+          ) : trendingMovies.length > 0 ? (
             <ul>
               {trendingMovies.map((movie, index) => (
                 <li key={movie.$id}>
@@ -109,8 +124,10 @@ const App = () => {
                 </li>
               ))}
             </ul>
-          </section>
-        )}
+          ) : (
+            <p>No trending movies found</p>
+          )}
+        </section>
 
         <section className="all-movies">
           <h2>All Movies</h2>
